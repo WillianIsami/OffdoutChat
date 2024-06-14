@@ -7,13 +7,12 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export const app = express();
-app.use(cors());
 
 export const server = createServer(app)
 
 const io = new Server(server, {
     cors: {
-        origin: "*",
+        origin: `${process.env.CORS_URL}`,
         methods: ["GET", "POST"],
     },
     maxHttpBufferSize: 2e7,
@@ -29,32 +28,34 @@ io.on("connection", (socket) => {
     let addedUser = false;
     console.log(`new user connected ${socket.id}`)
 
-    socket.on("message", (message: string) => {
+    socket.on("message", (content: string) => {
+        const timestamp = new Date().toISOString();
         socket.broadcast.emit('new message', {
-            id: socket.id,
-            message: message
+            userId: socket.id,
+            content: content,
+            timestamp: timestamp,
         });
-        console.log("Received message: ", message);
+        console.log("Received message: ", content);
     });
 
     socket.on('add user', () => {
         if (addedUser) return;
-        ++numUsers;
+        numUsers++;
         addedUser = true;
         socket.emit('login', {
             numUsers: numUsers
         });
         socket.broadcast.emit('user joined', {
-            id: socket.id,
+            userId: socket.id,
             numUsers: numUsers
         });
     });
     
     socket.on("disconnect", () => {
         if (addedUser){ 
-            --numUsers;
+            numUsers--;
             socket.broadcast.emit("user left", {
-                id: socket.id,
+                userId: socket.id,
                 numUsers: numUsers
             });
         }
