@@ -2,21 +2,18 @@
 
 import React, { useEffect, useState } from "react";
 import socket from "@/utils/socket";
-import { format, parseISO } from "date-fns";
-
-interface Message {
-  userId: string;
-  content: string;
-  timestamp: string;
-}
+import Message from "@/types/Message";
+import MessageList from "./MessageList";
 
 export default function ChatComponent() {
   const [inputMessage, setInputMessage] = useState("");
   const [newMessages, setNewMessages] = useState<Message[]>([]);
+  const [userId, setUserId] = useState<string | undefined>("");
 
   useEffect(() => {
     socket.on("connect", () => {
       console.log("Connected to the server");
+      setUserId(socket.id);
     });
     socket.on("disconnect", () => {
       console.log("Disconnected from server");
@@ -25,10 +22,17 @@ export default function ChatComponent() {
       console.log("New message received: ", message);
       setNewMessages((prevMessages) => [...prevMessages, message]);
     });
+
+    return () => {
+      socket.off("connect");
+      socket.off("disconnect");
+      socket.off("new message");
+    };
   }, []);
 
   const sendMessage = () => {
     console.log("all messages: ", newMessages);
+    console.log("userId verification", userId);
     if (inputMessage !== "") {
       socket.emit("message", inputMessage);
     }
@@ -37,21 +41,15 @@ export default function ChatComponent() {
   return (
     <div>
       <h2>Messages received</h2>
-      {newMessages.map((message, index) => (
-        <ul key={index}>
-          <li>{format(parseISO(message.timestamp), "PP")}</li>
-          <li>{message.userId}</li>
-          <li>
-            {message.content} <span>{format(message.timestamp, "HH:mm")}</span>
-          </li>
-          <br />
-        </ul>
-      ))}
+      <MessageList msgs={newMessages} userId={userId} />
       <div className="flex gap-3">
         <input
           className="appearance-none bg-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none"
           value={inputMessage}
           onChange={(e) => setInputMessage(e.target.value)}
+          onKeyUp={(event) => {
+            if (event.key === "Enter") sendMessage();
+          }}
           placeholder="Write your message here!"
         />
         <button

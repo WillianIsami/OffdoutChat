@@ -30,7 +30,7 @@ io.on("connection", (socket) => {
 
     socket.on("message", (content: string) => {
         const timestamp = new Date().toISOString();
-        socket.broadcast.emit('new message', {
+        io.emit('new message', {
             userId: socket.id,
             content: content,
             timestamp: timestamp,
@@ -42,10 +42,10 @@ io.on("connection", (socket) => {
         if (addedUser) return;
         numUsers++;
         addedUser = true;
-        socket.emit('login', {
+        io.emit('login', {
             numUsers: numUsers
         });
-        socket.broadcast.emit('user joined', {
+        io.emit('user joined', {
             userId: socket.id,
             numUsers: numUsers
         });
@@ -54,7 +54,7 @@ io.on("connection", (socket) => {
     socket.on("disconnect", () => {
         if (addedUser){ 
             numUsers--;
-            socket.broadcast.emit("user left", {
+            io.emit("user left", {
                 userId: socket.id,
                 numUsers: numUsers
             });
