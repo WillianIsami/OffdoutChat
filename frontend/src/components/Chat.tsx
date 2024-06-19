@@ -4,18 +4,22 @@ import React, { useEffect, useState } from "react";
 import socket from "@/utils/socket";
 import Message from "@/types/Message";
 import MessageList from "./MessageList";
+import ConnectionState from "./ConnectionState";
 
 export default function ChatComponent() {
   const [inputMessage, setInputMessage] = useState("");
   const [newMessages, setNewMessages] = useState<Message[]>([]);
   const [userId, setUserId] = useState<string | undefined>("");
+  const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
     socket.on("connect", () => {
       console.log("Connected to the server");
+      setIsConnected(true);
       setUserId(socket.id);
     });
     socket.on("disconnect", () => {
+      setIsConnected(false);
       console.log("Disconnected from server");
     });
     socket.on("new message", (message: Message) => {
@@ -41,6 +45,7 @@ export default function ChatComponent() {
   return (
     <div>
       <h2>Messages received</h2>
+      <ConnectionState isConnected={isConnected} />
       <MessageList msgs={newMessages} userId={userId} />
       <div className="flex gap-3">
         <input
