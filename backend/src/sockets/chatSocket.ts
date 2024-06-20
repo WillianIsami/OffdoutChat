@@ -5,12 +5,6 @@ const chatSocket = (io: Server) => {
   io.on('connection', (socket: Socket) => {
     console.log(`new user connected ${socket.id}`)
 
-    socket.on('sendMessage', async (data) => {
-      const message = new Message(data);
-      await message.save();
-      io.emit('message', message);
-    });
-
     socket.on("message", async (content: string) => {
       const obj_message = {
         userId: socket.id,
